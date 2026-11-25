@@ -1,0 +1,15 @@
+# Local gateway configuration (contains real gateway/server addresses; copy from GatewayPolicy.example.json)
+outputs/iNodeARM/GatewayPolicy.json
+
+# macOS metadata
+.DS_Store
+
+# Build cache and temporary inspection files
+work/
+outputs/iNodeARM/vendor/inode-cli/target/
+
+# Built application and packaged installers/archives
+outputs/iNode for Mac.app/
+outputs/*.pkg
+outputs/*.zip
+outputs/*.tar.gz

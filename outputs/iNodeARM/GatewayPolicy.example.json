@@ -1,0 +1,6 @@
+{
+  "defaultGateway": "https://vpn.example.com:3000",
+  "defaultPortalGateway": "192.0.2.10",
+  "defaultDomain": "duanxin",
+  "serverCertificatePolicy": "windows-compatible"
+}

@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+SERVICE=/Library/PrivilegedHelperTools/local.vision.inode-arm
+PLIST=/Library/LaunchDaemons/local.vision.inode-arm.service.plist
+RUNTIME=/private/var/run/local.vision.inode-arm
+[[ ! -L "$RUNTIME" ]] || { echo '后台服务运行目录不安全' >&2; exit 1; }
+/usr/bin/install -d -o root -g wheel -m 0755 "$RUNTIME"
+/usr/sbin/chown -R root:wheel "$SERVICE"
+/bin/chmod 0755 "$SERVICE" "$SERVICE/inode-service" "$SERVICE/inode-desktop" "$SERVICE/uninstall.sh"
+/bin/chmod 0644 "$SERVICE/client.cdhash" "$PLIST"
+/usr/bin/codesign --verify --strict "$SERVICE/inode-service"
+/usr/bin/codesign --verify --strict "$SERVICE/inode-desktop"
+/usr/bin/codesign --verify --deep --strict '/Applications/iNode for Mac.app'
+# Remove only our previous application name after validating the new payload.
+for LEGACY in '/Applications/iNode ARM.app' '/Applications/iNode for mac arm.app'; do
+    if [[ -d "$LEGACY" ]] && [[ "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$LEGACY/Contents/Info.plist" 2>/dev/null || true)" == local.vision.inode-arm ]]; then
+        /bin/rm -rf "$LEGACY"
+    fi
+done
+/bin/launchctl enable system/local.vision.inode-arm.service
+/bin/launchctl bootstrap system "$PLIST"
+/bin/launchctl kickstart system/local.vision.inode-arm.service
+for attempt in {1..30}; do
+    [[ ! -S "$RUNTIME/control.sock" ]] || exit 0
+    /bin/sleep 0.1
+done
+echo '后台服务未能启动，请查看系统日志或重新安装' >&2
+exit 1

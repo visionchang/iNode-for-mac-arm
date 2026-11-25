@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+[[ "${3:-/}" == / ]] || { echo '仅支持安装到当前系统卷' >&2; exit 1; }
+[[ "$(/usr/bin/uname -m)" == arm64 ]] || { echo '仅支持 Apple Silicon Mac' >&2; exit 1; }
+VERSION=$(/usr/bin/sw_vers -productVersion)
+MAJOR=${VERSION%%.*}
+REMAINDER=${VERSION#*.}
+MINOR=${REMAINDER%%.*}
+[[ "$MAJOR" -gt 13 || ( "$MAJOR" -eq 13 && "$MINOR" -ge 3 ) ]] || { echo '需要 macOS 13.3 或更新版本' >&2; exit 1; }
+# Refuse symlinked payload destinations before Installer writes privileged files.
+for path in /Library/PrivilegedHelperTools /Library/LaunchDaemons /Library/PrivilegedHelperTools/local.vision.inode-arm /Library/LaunchDaemons/local.vision.inode-arm.service.plist '/Applications/iNode ARM.app' '/Applications/iNode for mac arm.app' '/Applications/iNode for Mac.app'; do
+    [[ ! -L "$path" ]] || { echo "安装目标不能是符号链接：$path" >&2; exit 1; }
+done
+if [[ -d /Library/PrivilegedHelperTools/local.vision.inode-arm ]]; then
+    # Reject writable or unowned remnants; never run code from them as root.
+    /usr/bin/find /Library/PrivilegedHelperTools/local.vision.inode-arm \( ! -user root -o -perm -022 -o -type l \) -print | /usr/bin/awk 'NF {bad=1} END {exit bad}'
+fi
+/bin/launchctl bootout system/local.vision.inode-arm.service >/dev/null 2>&1 || true
