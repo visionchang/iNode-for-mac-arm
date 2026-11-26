@@ -52,7 +52,7 @@ fn mix(bytes: &mut [u8], key: &[u8]) {
 }
 fn version(seed: [u8; 4]) -> [u8; 20] {
     let mut out = [0u8; 20];
-    let text = b"CH1V7.30-0653";
+    let text = b"CH1V7.30-0641";
     out[..text.len()].copy_from_slice(text);
     let hex = seed.iter().map(|v| format!("{v:02x}")).collect::<String>();
     mix(&mut out[..16], hex.as_bytes());
@@ -61,7 +61,7 @@ fn version(seed: [u8; 4]) -> [u8; 20] {
     out
 }
 
-pub fn client_info(mac: Option<&[u8]>) -> Result<Vec<u8>> {
+fn encoded_version() -> Result<String> {
     let mut random = std::fs::File::open("/dev/urandom")?;
     let version = loop {
         let mut seed = [0; 4];
@@ -71,7 +71,26 @@ pub fn client_info(mac: Option<&[u8]>) -> Result<Vec<u8>> {
             break v;
         }
     };
-    let encoded = base64::engine::general_purpose::STANDARD.encode(version);
+    Ok(base64::engine::general_purpose::STANDARD.encode(version))
+}
+
+pub fn username_with_version(user: &str) -> Result<Vec<u8>> {
+    let encoded = encoded_version()?;
+    // Match libiNodePortal MakeLoginReqPkt (Carry version info) and
+    // libiNodeUtility utl_SetUserNameWithVersion:
+    // [0x06, 0x07] + 30-byte space-padded base64(version) + username.
+    let mut out = Vec::with_capacity(32 + user.len());
+    out.extend_from_slice(&[0x06, 0x07]);
+    let mut field = [b' '; 30];
+    let copy_len = encoded.len().min(field.len());
+    field[..copy_len].copy_from_slice(&encoded.as_bytes()[..copy_len]);
+    out.extend_from_slice(&field);
+    out.extend_from_slice(user.as_bytes());
+    Ok(out)
+}
+
+pub fn client_info(mac: Option<&[u8]>) -> Result<Vec<u8>> {
+    let encoded = encoded_version()?;
     // Attribute 33 contains nested TLVs: 1=version, 255=MAC. A bare MAC
     // string here is not the original client's wire format.
     let mut out = vec![1, (encoded.len() + 2) as u8];

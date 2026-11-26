@@ -128,7 +128,7 @@ impl Portal {
             crate::portal_compat::client_info(mac.as_ref().map(|m| m.as_slice()))?,
         ));
         let encoded_password = crate::portal_compat::password(password, encryption)?;
-        attrs.push((101, self.user.as_bytes().to_vec()));
+        attrs.push((101, crate::portal_compat::username_with_version(&self.user)?));
         attrs.push((102, encoded_password.to_vec()));
         if encryption != 0 {
             attrs.push((56, vec![encryption]));

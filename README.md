@@ -6,7 +6,7 @@
 
 - `outputs/iNodeARM/`：完整源码、构建脚本、依赖源码、使用说明和验证记录。
 - `outputs/iNode for Mac.app/`：已构建应用。
-- `outputs/iNode-for-Mac-1.0.2.arm64.pkg`：当前安装包，包含应用和 VPN 后台服务。
+- `outputs/iNode-for-Mac-1.0.4.arm64.pkg`：当前安装包，包含应用和 VPN 后台服务。
 - `outputs/卸载 iNode for Mac.command`：移除安装的应用和后台服务，保留个人配置。
 - `outputs/iNode-for-Mac-*.arm64.zip`、`outputs/iNode-ARM-*.zip`：应用压缩包与历史版本，不能替代后台服务安装。
 - `outputs/iNode-for-Mac-source.tar.gz`：原有源码归档。
